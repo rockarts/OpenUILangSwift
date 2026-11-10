@@ -111,5 +111,16 @@ struct LexerTests {
         #expect(tokens.count == 1)
         #expect(tokens.first == expected)
     }
+    
+    @Test("Identifier stops at punctuation")
+    func identifierStopsAtPunctuation() {
+        let lexer = Lexer(source: "hello=world")
+        let tokens = lexer.tokenize()
 
+        #expect(tokens == [
+            .identifier("hello"),
+            .equals,
+            .identifier("world")
+        ])
+    }
 }

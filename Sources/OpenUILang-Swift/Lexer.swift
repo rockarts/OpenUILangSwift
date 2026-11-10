@@ -40,15 +40,7 @@ struct Lexer {
             case _ where character.isWhitespace:
                 position += 1
             case _ where character.isLetter:
-                var identifier = ""
-                
-                while position < characters.count &&
-                        characters[position].isLetter {
-                    identifier.append(characters[position])
-                    position += 1
-                }
-                
-                tokens.append(.identifier(identifier))
+                tokens.append(readIdentifier(characters: characters, position: &position))
             default:
                 // Handle unknown characters
                 position += 1
@@ -56,5 +48,17 @@ struct Lexer {
         }
         
         return tokens
+    }
+    
+    func readIdentifier(characters: [Character], position: inout Int) -> Token {
+        var identifier = ""
+        
+        while position < characters.count &&
+                characters[position].isLetter {
+            identifier.append(characters[position])
+            position += 1
+        }
+        
+        return .identifier(identifier)
     }
 }
