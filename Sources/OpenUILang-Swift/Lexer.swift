@@ -37,6 +37,8 @@ struct Lexer {
             case ",":
                 tokens.append(.comma)
                 position += 1
+            case "\"":
+                tokens.append(readString(characters: characters, position: &position))
             case _ where character.isWhitespace:
                 position += 1
             case _ where character.isLetter:
@@ -60,5 +62,22 @@ struct Lexer {
         }
         
         return .identifier(identifier)
+    }
+    
+    private func readString(
+        characters: [Character],
+        position: inout Int
+    ) -> Token {
+        var string = ""
+        position += 1
+        
+        while characters[position] != "\"" {
+            print(characters[position])
+            string.append(characters[position])
+            position += 1
+        }
+        
+        position += 1
+        return .string(string)
     }
 }

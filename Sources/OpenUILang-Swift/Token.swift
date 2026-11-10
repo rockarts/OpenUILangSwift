@@ -13,4 +13,5 @@ enum Token: Equatable {
     case leftBracket
     case rightBracket
     case comma
+    case string(String)
 }

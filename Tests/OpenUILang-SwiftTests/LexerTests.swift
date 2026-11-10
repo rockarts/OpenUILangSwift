@@ -123,4 +123,23 @@ struct LexerTests {
             .identifier("world")
         ])
     }
+    
+    @Test("Lexer recognizes string literals")
+    func recognizesStringLiterals() {
+        let lexer = Lexer(
+            source: #"title = TextContent("Hello World")"#
+        )
+
+        let tokens = lexer.tokenize()
+
+        #expect(tokens == [
+            .identifier("title"),
+            .equals,
+            .identifier("TextContent"),
+            .leftParen,
+            .string("Hello World"),
+            .rightParen
+        ])
+    }
+
 }
