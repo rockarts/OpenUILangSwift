@@ -64,20 +64,59 @@ struct Lexer {
         return .identifier(identifier)
     }
     
+    
     private func readString(
         characters: [Character],
         position: inout Int
     ) -> Token {
         var string = ""
         position += 1
-        
-        while characters[position] != "\"" {
-            print(characters[position])
-            string.append(characters[position])
-            position += 1
+
+        while position < characters.count {
+            let character = characters[position]
+
+            if character == "\"" {
+                position += 1
+                break
+            }
+
+            if character == "\\" {
+                guard position + 1 < characters.count else {
+                    position += 1
+                    break
+                }
+
+                let escaped = characters[position + 1]
+
+                switch escaped {
+                case "\"":
+                    string.append("\"")
+                case "\\":
+                    string.append("\\")
+                case "n":
+                    string.append("\n")
+                case "r":
+                    string.append("\r")
+                case "t":
+                    string.append("\t")
+                case "b":
+                    string.append("\u{0008}")
+                case "f":
+                    string.append("\u{000C}")
+                case "/":
+                    string.append("/")
+                default:
+                    string.append(escaped)
+                }
+
+                position += 2
+            } else {
+                string.append(character)
+                position += 1
+            }
         }
-        
-        position += 1
+
         return .string(string)
     }
+
 }

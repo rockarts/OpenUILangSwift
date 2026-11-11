@@ -141,5 +141,102 @@ struct LexerTests {
             .rightParen
         ])
     }
+    
+    @Test("Lexer handles an unterminated string without crashing")
+    func handlesUnterminatedString() {
+        let lexer = Lexer(source: "\"Hello World")
 
+        let tokens = lexer.tokenize()
+
+        #expect(tokens == [
+            .string("Hello World")
+        ])
+    }
+
+    
+    @Test("Lexer handles escaped quotation marks")
+    func recognizesEscapedQuotes() {
+        let lexer = Lexer(
+            source: #""Hi \"Hello\"""#
+        )
+
+        let tokens = lexer.tokenize()
+
+        #expect(tokens == [
+            .string("Hi \"Hello\"")
+        ])
+    }
+    
+    
+    @Test("Lexer recognizes escaped backslashes")
+    func recognizesEscapedBackslashes() {
+        let lexer = Lexer(source: #""Hello\\World""#)
+
+        let tokens = lexer.tokenize()
+
+        #expect(tokens == [
+            .string("Hello\\World")
+        ])
+    }
+
+    @Test(
+        "Recognizes supported string escape sequences",
+        arguments: [
+            (#""Hello \"World\"""#, "Hello \"World\""),
+            (#""Hello\\World""#, "Hello\\World"),
+            (#""Hello\nWorld""#, "Hello\nWorld"),
+            (#""Hello\rWorld""#, "Hello\rWorld"),
+            (#""Hello\tWorld""#, "Hello\tWorld"),
+            (#""Hello\bWorld""#, "Hello\u{0008}World"),
+            (#""Hello\fWorld""#, "Hello\u{000C}World"),
+            (#""Hello\/World""#, "Hello/World")
+        ]
+    )
+    func recognizesStringEscapes(
+        source: String,
+        expected: String
+    ) {
+        let lexer = Lexer(source: source)
+        let tokens = lexer.tokenize()
+
+        #expect(tokens == [.string(expected)])
+    }
+
+    @Test("Recognizes multiple escape sequences in one string")
+    func recognizesMultipleEscapes() {
+        let lexer = Lexer(
+            source: #""First\nSecond\t\"Hello\"""#
+        )
+
+        let tokens = lexer.tokenize()
+
+        #expect(tokens == [
+            .string("First\nSecond\t\"Hello\"")
+        ])
+    }
+
+    @Test("Recognizes an empty string")
+    func recognizesEmptyString() {
+        let lexer = Lexer(source: #""""#)
+
+        #expect(lexer.tokenize() == [.string("")])
+    }
+
+    @Test("Handles trailing backslash without crashing")
+    func handlesTrailingBackslash() {
+        let lexer = Lexer(source: #""Hello\"#)
+
+        #expect(lexer.tokenize() == [
+            .string("Hello")
+        ])
+    }
+
+    @Test("Handles unknown escapes using current fallback")
+    func handlesUnknownEscape() {
+        let lexer = Lexer(source: #""Hello\qWorld""#)
+
+        #expect(lexer.tokenize() == [
+            .string("HelloqWorld")
+        ])
+    }
 }
