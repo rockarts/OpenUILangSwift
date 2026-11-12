@@ -64,7 +64,6 @@ struct Lexer {
         return .identifier(identifier)
     }
     
-    
     private func readString(
         characters: [Character],
         position: inout Int
@@ -105,11 +104,76 @@ struct Lexer {
                     string.append("\u{000C}")
                 case "/":
                     string.append("/")
+
+                case "u":
+                    guard position + 5 < characters.count else {
+                        position += 2
+                        continue
+                    }
+
+                    let hex = String(
+                        characters[(position + 2)...(position + 5)]
+                    )
+
+                    guard let first = UInt32(hex, radix: 16) else {
+                        position += 6
+                        continue
+                    }
+
+                    if (0xD800...0xDBFF).contains(first) {
+                        // First value is a high surrogate.
+                        // Look ahead for a second \uXXXX escape.
+
+                        if position + 11 < characters.count &&
+                           characters[position + 6] == "\\" &&
+                           characters[position + 7] == "u" {
+
+                            let lowHex = String(
+                                characters[(position + 8)...(position + 11)]
+                            )
+
+                            if let second = UInt32(lowHex, radix: 16),
+                               (0xDC00...0xDFFF).contains(second) {
+
+                                let high = first - 0xD800
+                                let shiftedHigh = high << 10
+                                let low = second - 0xDC00
+
+                                let codePoint = 0x10000 + shiftedHigh + low
+
+                                if let scalar = Unicode.Scalar(codePoint) {
+                                    string.append(String(scalar))
+                                }
+
+                                // The pair consumes 12 characters.
+                                // The common increment below handles 2.
+                                position += 10
+                            } else {
+                                // Invalid low surrogate
+                                position += 4
+                            }
+                        } else {
+                            // High surrogate without a matching low surrogate
+                            position += 4
+                        }
+
+                    } else if let scalar = Unicode.Scalar(first) {
+                        string.append(String(scalar))
+
+                        // A regular Unicode escape consumes 6 characters.
+                        position += 4
+
+                    } else {
+                        // Isolated low surrogate or invalid scalar
+                        position += 4
+                    }
+
                 default:
                     string.append(escaped)
                 }
 
                 position += 2
+
             } else {
                 string.append(character)
                 position += 1
@@ -119,4 +183,5 @@ struct Lexer {
         return .string(string)
     }
 
+    
 }

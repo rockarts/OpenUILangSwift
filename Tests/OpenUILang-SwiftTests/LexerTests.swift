@@ -239,4 +239,70 @@ struct LexerTests {
             .string("HelloqWorld")
         ])
     }
+    
+    @Test(
+        "Lexer decodes Unicode escapes",
+        arguments: [
+            (#""\u0041""#, "A"),
+            (#""\u00E9""#, "é"),
+            (#""\u03A9""#, "Ω"),
+            (#""\u2764""#, "❤")
+        ]
+    )
+    func recognizesUnicodeEscapes(
+        source: String,
+        expected: String
+    ) {
+        let lexer = Lexer(source: source)
+        let tokens = lexer.tokenize()
+
+        #expect(tokens == [.string(expected)])
+    }
+    
+    @Test("Lexer decodes Unicode surrogate pairs")
+    func recognizesSurrogatePairs() {
+        let lexer = Lexer(source: #""\uD83D\uDE00""#)
+
+        let tokens = lexer.tokenize()
+
+        #expect(tokens == [.string("😀")])
+    }
+
+    @Test(
+        "Decodes Unicode escapes",
+        arguments: [
+            (#""\u0041""#, "A"),
+            (#""\u00E9""#, "é"),
+            (#""\u03A9""#, "Ω"),
+            (#""\u2764""#, "❤"),
+            (#""\uD83D\uDE00""#, "😀"),
+            (#""\uD83D\uDE80""#, "🚀"),
+            (#""Hello \uD83D\uDE00 World""#, "Hello 😀 World"),
+            (#""\u0041\u0042\u0043""#, "ABC"),
+            (#""\uD83D\uDE00\uD83D\uDE80""#, "😀🚀")
+        ]
+    )
+    func decodesUnicodeEscapes(
+        source: String,
+        expected: String
+    ) {
+        let lexer = Lexer(source: source)
+
+        #expect(lexer.tokenize() == [.string(expected)])
+    }
+
+    @Test("Handles isolated high surrogate")
+    func handlesIsolatedHighSurrogate() {
+        let lexer = Lexer(source: #""\uD83D""#)
+
+        #expect(lexer.tokenize() == [.string("")])
+    }
+
+    @Test("Handles isolated low surrogate")
+    func handlesIsolatedLowSurrogate() {
+        let lexer = Lexer(source: #""\uDE00""#)
+
+        #expect(lexer.tokenize() == [.string("")])
+    }
+
 }
